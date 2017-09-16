@@ -8,6 +8,16 @@ call plug#begin('~/.local/share/nvim/plugged')
 Plug 'jonathanfilip/vim-lucius'
 Plug 'altercation/vim-colors-solarized'
 
+" js
+Plug 'moll/vim-node'
+Plug 'ternjs/tern_for_vim'
+Plug 'carlitux/deoplete-ternjs'
+Plug 'pangloss/vim-javascript'
+Plug 'othree/yajs.vim'
+Plug 'othree/es.next.syntax.vim'
+Plug 'neovim/node-host'
+Plug 'mklabs/mdn.vim'
+
 " Typescript
 Plug 'mhartington/nvim-typescript'
 Plug 'HerringtonDarkholme/yats.vim'
@@ -27,6 +37,8 @@ Plug 'tpope/vim-vinegar'
 Plug 'mattn/emmet-vim'
 " json
 Plug 'elzr/vim-json'
+" twig
+Plug 'lumiliet/vim-twig'
 
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
@@ -36,6 +48,7 @@ Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
 Plug 'neomake/neomake'
 Plug 'tpope/vim-unimpaired'
 Plug 'tpope/vim-commentary'
+Plug 'tpope/vim-surround'
 Plug 'sjl/gundo.vim'
 Plug 'chrisbra/Recover.vim'
 Plug 'SirVer/ultisnips'
@@ -45,6 +58,7 @@ Plug 'mileszs/ack.vim'
 Plug 'Chiel92/vim-autoformat'
 Plug 'mattn/gist-vim'
 Plug 'mattn/webapi-vim'
+Plug 'terryma/vim-multiple-cursors'
 
 call plug#end()
 
@@ -77,7 +91,6 @@ nnoremap Q <nop>
 
 " Fast saving
 nnoremap <leader>w :w!<cr>
-nnoremap <leader>x :x!<cr>
 nnoremap <leader>q :q<CR>
 
 " vimrc
@@ -164,6 +177,65 @@ nnoremap <silent> ]q  :call WrapCommand('down', 'c')<CR>
 nnoremap <silent> [l :call WrapCommand('up', 'l')<CR>
 nnoremap <silent> ]l  :call WrapCommand('down', 'l')<CR>
 
+"""""
+" Brackets
+"""""
+ ""inoremap (( ()<Esc>:call BC_AddChar(")")<CR>i
+""autocmd filetype ts,js,py,tsx,jsx,c,cpp,java,rb inoremap {{ {<CR>}<Esc>:call BC_AddChar("}")<CR><Esc>kA<CR>
+""inoremap [[ []<Esc>:call BC_AddChar("]")<CR>i
+""inoremap "" ""<Esc>:call BC_AddChar("\"")<CR>i
+""" jump out of parenthesis
+""inoremap <C-j> <Esc>:call search(BC_GetChar(), "W")<CR>a
+""inoremap ) <c-r>=ClosePair(')')<CR>
+""inoremap ] <c-r>=ClosePair(']')<CR>
+""inoremap } <c-r>=CloseBracket()<CR>
+""inoremap " <c-r>=QuoteDelim('"')<CR>
+""inoremap ' <c-r>=QuoteDelim("'")<CR>
+
+function! BC_AddChar(schar)
+ if exists("b:robstack")
+ let b:robstack = b:robstack . a:schar
+ else
+ let b:robstack = a:schar
+ endif
+endfunction
+
+function! BC_GetChar()
+ let l:char = b:robstack[strlen(b:robstack)-1]
+ let b:robstack = strpart(b:robstack, 0, strlen(b:robstack)-1)
+ return l:char
+endfunction
+
+function! ClosePair(char)
+ if getline('.')[col('.') - 1] == a:char
+ return "\<Right>"
+ else
+ return a:char
+ endif
+endf
+
+function! CloseBracket()
+ if match(getline(line('.') + 1), '\s*}') < 0
+ return "\<CR>}"
+ else
+ return "\<Esc>j0f}a"
+ endif
+endf
+
+function! QuoteDelim(char)
+ let line = getline('.')
+ let col = col('.')
+ if line[col - 2] == "\\"
+ "Inserting a quoted quotation mark into the string
+ return a:char
+ elseif line[col - 1] == a:char
+ "Escaping out of the string
+ return "\<Right>"
+ else
+ "Starting a string
+ return a:char.a:char."\<Esc>i"
+ endif
+endf
 
 """""
 " autoformat
@@ -174,6 +246,15 @@ nnoremap <leader>f :Autoformat<CR>
 " terminal
 """""
 tnoremap <ESC> <C-\><C-n>
+autocmd BufEnter term://* startinsert 
+tnoremap <c-l> <C-\><C-n><C-w>l
+tnoremap <c-h> <C-\><C-n><C-w>h
+tnoremap <c-j> <C-\><C-n><C-w>j
+tnoremap <c-k> <C-\><C-n><C-w>k
+autocmd FileType fzf tnoremap <buffer> <c-j> <down>
+autocmd FileType fzf tnoremap <buffer> <c-k> <up>
+command! Te sp | exe "resize 20" | te
+command! Tev vs | te
 
 """""
 " deoplete
@@ -216,8 +297,8 @@ inoremap <expr><TAB>  pumvisible() ? "\<C-n>" : "\<TAB>"
 """""
 " FZF
 """""
+nnoremap <C-G> :GFiles<CR>
 nnoremap <C-P> :FZF<CR>
-nnoremap <C-G> :GitFiles<CR>
 " Mapping selecting mappings
 nmap <leader><tab> <plug>(fzf-maps-n)
 xmap <leader><tab> <plug>(fzf-maps-x)
